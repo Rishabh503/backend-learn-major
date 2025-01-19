@@ -4,12 +4,21 @@ import dotenv from "dotenv";
 // import express from "express";
 // import { DB_NAME } from "./constants";
 import connectDB from "./db/index.js";
+import { app } from "./app.js";
 
 dotenv.config({
     path:'./env'
 })
 
 connectDB()
+.then(()=>{
+    app.listen(process.env.PORT || 8000,()=>{
+        console.log(`server is tunning at port : ${process.env.PORT} `)
+    })
+})
+.catch((error)=>{
+    console.log("mongo db connexxtion failed in index.js of src",error)
+})
 
 
 //try catch and asycn await 
