@@ -20,4 +20,14 @@ app.use(express.static("public"))
 app.use(cookieParser())
 
 
-export{app}
+//routes bula re hai
+import userRouter from './routes/user.routes.js'
+
+
+//routes decalartion
+//we use app,use 
+
+app.use("/api/v1/users",userRouter)
+
+
+export {app}
