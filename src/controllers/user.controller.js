@@ -11,6 +11,28 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 //         message:"ok"
 //     })
 // })
+        // ye func khud hi acess and refresh token dega jab isko userid dege
+const generateAcessAndRefreshTokens=async (userId)=>{
+    try {
+       const user= await User.findById(userId)
+            const accessToken=user.genrateAccessToken();
+            const refreshToken=user.genrateRefreshToken();
+
+            //ab jo access n refresh token hota hai wo user ke pass jata hai and refresh jo hai wo db me bhi jata h
+            // to db  me bhejte hai 
+            /// if u r thinking ye aya kaha se 💀 so ye aya hai user se jo hum usermodels se leke aye hai aur hum usme ye refresh token add kre hai 
+            user.refreshToken=refreshToken
+            //ab save krwate hai but we just have to save not validate so we will use mongose ka method
+            await user.save({validateBeforeSave:false})
+
+            // dono ko bhejdo bahar is fnc ke 
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,"something went wrong while creatnt tokenss in user.controller ")
+    }
+}
+
 
 const registerUser=asyncHandler(async (req,res)=>{
     //get user data
@@ -83,8 +105,72 @@ const registerUser=asyncHandler(async (req,res)=>{
   
 })
 
+// ajj likhege login and all ka code 
+
+const loginUser=asyncHandler(async (req,res)=>{
+    // req-> data
+    //username or email me kisi ek se login
+    //find the user
+    //user found or not
+    //password check
+    //acess and refresh token
+    // send cookie
+
+    // req-> data
+    const {email , username,password}=req.body
+    
+    if(!username || !email){
+        throw new ApiError(400,"username or email is required")
+    }
+     //find the user
+     const user=await User.findOne({
+        $or:[{username},{email}]
+     })
+        // when user isnot found 
+     if(!user){
+        throw new ApiError(404,"User doesnt exist")
+     }
+
+    //  checking password
+            // heere we are usng our user to check bcoz it will have althose features then the User of mongosedb
+
+    const isPasswordValid=await user.isPasswordCorrect(password)
+
+    if(!isPasswordValid){
+        throw new ApiError(401,"invalid user credentials")
+    }
+
+    const {accessToken,refreshToken}=await generateAcessAndRefreshTokens(user._id)
+
+    // ab app isko cookies me bhejo
+    const  loggedInUser=await User.findById(user_id).select("-password -refreshToken")
+
+    //sb hogya chliye wapis kre ise  along with cookies
+            // ab cookie ke kuch option hota h unhe banalete ha 
+            const options={
+                httpOnly:true
+                ,secure:true
+            }
+
+    return res.status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new ApiResponse(
+            200,{
+                user:loggedInUser,
+                accessToken,
+                refreshToken
+            },
+            "User Logged In succesfully"
+        )
+    )
+
+})
+
 export {
     registerUser,
+    loginUser
 }
 
  
