@@ -19,7 +19,7 @@ const userSchema=new mongoose.Schema(
         lowercase:true, 
         trim:true,
     },
-    fullname:{
+    fullName:{
         type:String,
         required:true,
         trim:true,
@@ -48,7 +48,8 @@ const userSchema=new mongoose.Schema(
 //bcrypt kro 
 userSchema.pre("save",async function (next){
     if(!this.isModified("password")) return next();
-    this.password=bcrypt.hash(this.password,10)
+    this.password=await bcrypt.hash(this.password,10)
+    next()
 })
 // creating a method to check password 
 userSchema.methods.isPasswordCorrect=async function(password){
@@ -56,11 +57,11 @@ userSchema.methods.isPasswordCorrect=async function(password){
 }
 //YE JWT KA TOKEN RETURN KRTA HAI
 userSchema.methods.genrateAccessToken=function(){
-    jwt.sign({
+    return jwt.sign({
         _id:this._id,
         email:this.email,
         username:this.username,
-        fullName:this.fullname
+        fullName:this.fullName
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -69,11 +70,8 @@ userSchema.methods.genrateAccessToken=function(){
 )
 }
 userSchema.methods.genrateRefreshToken=function(){
-    jwt.sign({
+    return jwt.sign({
         _id:this._id,
-        email:this.email,
-        username:this.username,
-        fullName:this.fullname
     },
     process.env.REFRESH_TOKEN_SECRET,
     {

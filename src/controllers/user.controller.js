@@ -16,7 +16,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     //get user data
         // req.body me sb aajata hai from json and form (url excluded)
         const {fullName ,email,username,password}=req.body
-        //dry run to check
+        //dry run to check and console log this req.body
         // console.log(fullName)  
     // validation -> not empty and all
     if(fullName==="" || email==="" || username==="" || password===""){
@@ -24,18 +24,27 @@ const registerUser=asyncHandler(async (req,res)=>{
     }
     //check if user already exists --
 
-    const existedUser =User.findOne({
+    const existedUser =await User.findOne({
         $or:[{username},{email}]
     })
 
-    if(!existedUser) {
+    if(existedUser) {
         throw new ApiError(409,"User with email or username already existed")
     }
     //file exists or not ie avatar and images (see the model for this)
         // ye multer se aaya ha
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path; 
+
+    // ye req.files ko console.log kro 
     
+    //ok so we have here checeked for avatar
+    // so we will check here 
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+        coverImageLocalPath=req.files.coverImage[0].path
+    }
+
     if(!avatarLocalPath) {
         throw new ApiError(400,"Avatar file is not uploaded")
     }
@@ -51,7 +60,7 @@ const registerUser=asyncHandler(async (req,res)=>{
    const user= await User.create({
         fullName,
         avatar:avatar.url,
-        coverImage:coverImage.url?.url || "",
+        coverImage:coverImage?.url || "",
         email,
         password,
         username:username.toLowerCase()

@@ -1,6 +1,6 @@
 import {Router} from "express";
 import {registerUser} from "../controllers/user.controller.js"
-
+import {upload} from "../middlewares/multer.middleware.js"
 import {ApiError} from "../utils/ApiError.js"
 
 //router bnaya  and uska route banaya

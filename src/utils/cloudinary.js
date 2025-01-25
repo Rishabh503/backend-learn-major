@@ -1,4 +1,4 @@
-import {v2 as cloudinary} from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
 
@@ -14,9 +14,11 @@ const uploadOnCLoudinary = async (localfilepath)=>{
         //upload 
         const response =await cloudinary.uploader.upload(localfilepath,{
             resource_type:"auto"
-        })
+        }) 
+        // isko console krio response ko
         // succesfull uploading check
-        console.log("file uplaoding done",response.url);
+        // console.log("file uplaoding done",response.url);
+        fs.unlinkSync(localfilepath)
         return response;
     } catch (error) {
         //removcing it from the locall server
@@ -26,4 +28,4 @@ const uploadOnCLoudinary = async (localfilepath)=>{
     }
 }
 
-export {uploadOnCLoudinary}
+export { uploadOnCLoudinary };
