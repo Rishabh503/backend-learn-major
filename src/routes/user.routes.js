@@ -1,7 +1,8 @@
 import {Router} from "express";
-import {registerUser} from "../controllers/user.controller.js"
+import {loggoutUser, loginUser, registerUser} from "../controllers/user.controller.js"
 import {upload} from "../middlewares/multer.middleware.js"
 import {ApiError} from "../utils/ApiError.js"
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 //router bnaya  and uska route banaya
 const router=Router()
@@ -26,4 +27,12 @@ router.route("/register").post(
     registerUser
 )
 
+router.route("/login").post(loginUser)
+
+
+//secured routes
+router.route("/logout").post(
+    verifyJWT, // wo jo next likha tha wo agla func jo hunmne likha usko chalayega
+    loggoutUser
+)
 export default router
