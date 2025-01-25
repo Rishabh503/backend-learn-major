@@ -35,7 +35,6 @@ const generateAcessAndRefreshTokens=async (userId)=>{
     }
 }
 
-
 const registerUser=asyncHandler(async (req,res)=>{
     //get user data
         // req.body me sb aajata hai from json and form (url excluded)
@@ -193,35 +192,41 @@ const loggoutUser=asyncHandler(async (req,res)=>{
 })
 
 const refreshAccessToken=asyncHandler(async (req,res)=>{
+    //purana refresh token liya
     const incomingRefreshToken= req.cookies.refreshToken || req.body.refreshToken
 
-    if(incomingRefreshToken){
+    // aaya to thik nhi to error 
+    if(!incomingRefreshToken){
         throw new ApiError(401,"unauthorized request in refresh acess token")
     }
 
+
    try {
+    // decoding our token kyuki ye jwt ki bhasha hai
      const decodedToken=jwt.verify(
          incomingRefreshToken,
          process.env.REFRESH_TOKEN_SECRET
      )
+     // getting that user because is token me id hogii
  
      const user =await User.findById(decodedToken?._id)
- 
+ //user aya to thik wrna thik
      if(!user){
          throw new ApiError(401,"invlaud refres token no user there or ")
      }
- 
+ // check if old and nnew tokenss are same
      if(incomingRefreshToken !==user?.refreshToken){
          throw new ApiError(401,"refresh token is expired or used")
      }
- 
+ //ye options to hum apni cookie ke liye banaye h
+
      const options={
          httpOnly:true,
          secure:true
      }
-
+//ab same hai to kya krna hai ek new access token and ek new refresh token bana dena hai
      const {accessToken,newrefreshToken}=await generateAcessAndRefreshTokens(user._id)
- 
+ // in tokens ko add krdena hai
      return res
      .status(200)
      .cookie("acessToken",accessToken,options)
@@ -240,12 +245,120 @@ const refreshAccessToken=asyncHandler(async (req,res)=>{
 
 })
 
+//changing and updating 
+const changeCurrentPassword= asyncHandler(async (req,res)=>{
+
+    const {oldPassword,newPassword}=req.body
+    //is stage pe bnda login hai that means auth middleware chala hai so we could easily have that req.user me uski id kyuki humne auth middlewafe me wo add kkiua tha 
+    const idOfUser=await req.user?._id
+
+    const user =await User.findById(idOfUser)
+    const isPasswordCorrect=await user.isPasswordCorrect(oldPassword)
+
+    if(!isPasswordCorrect){
+        throw new ApiError(400,"ivalid old password   ")
+    }
+
+    user.password=newPassword
+
+    await user.save({validateBeforeSave:false})
+
+    return res.status(200).json(new ApiResponse(200,{},"password changed succesfully"))
+
+
+})
+
+const getCurrentUser=asyncHandler(async (req,res)=>{
+    return res.status(200).json(new ApiError(200,req.user,"user fetched succesfully"));
+})
+
+const updateAccountDetails=asyncHandler(async(req,res)=>{
+    const {fullName,email}=req.body
+
+    const user=await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                fullName:fullName,
+                email:email
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res.status(200)
+    .json(new ApiResponse(200,user,"Account details updated Succesfully"))
+})
+
+const updateUserAvatar=asyncHandler(async(req,res)=>{
+    const avatarLocalPath=req.file?.path
+    
+    if(!avatarLocalPath){
+        throw new ApiError(401,"avtar file is missing")
+    }
+
+    const avatar=await uploadOnCLoudinary(avatarLocalPath)
+
+    
+    if(!avatar.url){
+        throw new ApiError(401,"error whole avtar uploading ")
+    }
+
+   const user=await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                avatar:avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res.status(200)
+    .json(new ApiResponse(200,
+        user,
+        "user avatar u[dated succesfully"))
+
+})
+
+const updateLocalImage=asyncHandler(async(req,res)=>{
+    const localImagePath=req.file?.path
+
+    if(!localImagePath){
+        throw new ApiError(401,"local image file is missng")
+    }
+    const localImage=await uploadOnCLoudinary(localImagePath)
+
+    if(!localImage.url){
+        throw new ApiError(401,"local image file is missng")
+    }
+    const user=User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                coverImage:localImage.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200,user,"cover image succsfully updated")
+    )
+})
+
 
 export {
     registerUser,
     loginUser,
     loggoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    getCurrentUser,
+    changeCurrentPassword,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateLocalImage
 }
 
  
